@@ -1,0 +1,14 @@
+# Python stuff
+build/
+dist/
+.egg
+*.egg-info
+**/__pycache__
+
+# Virtual env
+venv/
+
+# pub_repo stuff
+upload/
+packages/
+config.yaml
