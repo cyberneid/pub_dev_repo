@@ -35,7 +35,7 @@ tokens:
     - package_a
   some_other_token:
     - package_b
-	- package_a
+    - package_a
 
 ```
 
