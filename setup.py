@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = "pub_repo",
-    version = "0.1.1",
+    version = "0.1.2",
     url = "https://codeberg.org/PapaTutuWawa/pub_repo",
     author = "Alexander \"PapaTutuWawa\"",
     author_email = "papatutuwawa <at> polynom.me",
