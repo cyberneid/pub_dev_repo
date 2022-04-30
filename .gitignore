@@ -9,6 +9,6 @@ dist/
 venv/
 
 # pub_repo stuff
-upload/
+uploads/
 packages/
 config.yaml
