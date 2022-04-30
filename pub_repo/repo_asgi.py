@@ -10,14 +10,25 @@ import falcon
 import falcon.asgi
 
 class ConfigSingleton:
-    package_dir: str          # Where packages are stored
-    upload_dir: str           # Where uploads are tempoarily are stored
-    outside_url: str          # The external URL that this service is exposed on
-    check_authorization: bool # Whether to check authorization when publishing
-    allowed_tokens: dict      # Mapping authorization token to list of packages that it can publish on
+    """
+    Kind-of-singleton holding all the static service configuration.
+    """
+    # Where packages are stored
+    package_dir: str
+    # Where uploads are tempoarily are stored
+    upload_dir: str
+    # The external URL that this service is exposed on
+    outside_url: str
+    # Whether to check authorization when publishing
+    check_authorization: bool
+    # Mapping authorization token to list of packages that it can publish on
+    allowed_tokens: dict
 
     @staticmethod
     def load_config():
+        """
+        Load the configuration into the singleton class.
+        """
         path = os.environ.get("PUB_REPO_CONFIG", "./pub_repo.yaml")
 
         if not (os.path.exists(path) and os.path.isfile(path)):
@@ -33,7 +44,8 @@ class ConfigSingleton:
         ConfigSingleton.allowed_tokens = data["tokens"]
 
         if not ConfigSingleton.check_authorization:
-            print("WARNING: NOT CHECKING TOKENS! EVERYONE CAN PUBLISH UPDATES FOR EVERY PACKAGE AND PUBLISH ANY PACKAGE! DO NOT USE IN PRODUCTION")
+            print("WARNING: NOT CHECKING TOKENS! EVERYONE CAN PUBLISH UPDATES FOR "
+                  "EVERY PACKAGE AND PUBLISH ANY PACKAGE! DO NOT USE IN PRODUCTION")
 
 class PackageManager:
     @staticmethod
@@ -58,7 +70,15 @@ class PackageManager:
         existence.
         """
         return os.path.join(PackageManager.package_path(name), "info.json")
-    
+
+    @staticmethod
+    def package_versions_path(name):
+        """
+        Return the path to the packages versions directory. Does not imply its
+        existence.
+        """
+        return os.path.join(PackageManager.package_path(name), "versions")
+
     @staticmethod
     def update_package(name, pubspec_data):
         """
@@ -66,7 +86,8 @@ class PackageManager:
         False, if the version is already added.
         """
         info = {}
-        if not os.path.exists(PackageManager.package_path(name)):
+        package_exists = PackageManager.package_exists(name)
+        if not package_exists:
             info = {
                 "name": pubspec_data["name"],
                 "latest": {},
@@ -79,7 +100,11 @@ class PackageManager:
         versions = [ v["version"] for v in info["versions"] ]
         if pubspec_data["version"] in versions:
             return False
-                
+
+        if not package_exists:
+            os.mkdir(PackageManager.package_path(name))
+            os.mkdir(PackageManager.package_versions_path(name))
+
         version = {
             "version": pubspec_data["version"],
             "pubspec": pubspec_data
@@ -91,10 +116,16 @@ class PackageManager:
             f.write(json.dumps(info))
 
         return True
-    
+
 class PublishResource:
     # A list of nonces we are currently using
     active_nonces = []
+
+    @staticmethod
+    def upload_url(nonce, token):
+        return "%s/api/packages/versions/new/upload/%s/%s" % (ConfigSingleton.outside_url,
+                                                              nonce,
+                                                              token)
 
     async def on_get(self, req, resp):
         token = req.headers.get("Authorization", "")
@@ -111,9 +142,9 @@ class PublishResource:
             return
 
         nonce = token_urlsafe(64)
-        upload_url = ConfigSingleton.outside_url + "/api/packages/versions/new/upload/" + nonce + "/" + token
+        upload_url = PublishResource.upload_url(nonce, token)
         PublishResource.active_nonces.append(nonce)
-        
+
         resp.content_type = "application/vnd.pub.v2+json"
         resp.status = falcon.HTTP_200
         resp.text = json.dumps({
@@ -122,6 +153,12 @@ class PublishResource:
         })
 
 class UploadResource:
+    @staticmethod
+    def finalize_url(nonce, token):
+        return "%s/api/packages/versions/new/finalize/%s/%s" % (ConfigSingleton.outside_url,
+                                                                nonce,
+                                                                token)
+
     async def on_post(self, req, resp, nonce, auth):
         if not nonce in PublishResource.active_nonces:
             resp.status = falcon.HTTP_401
@@ -137,8 +174,8 @@ class UploadResource:
                         f.write(chunk)
 
         resp.status = falcon.HTTP_204
-        resp.set_header("Location", ConfigSingleton.outside_url + "/api/packages/versions/new/finalize/" + nonce + "/" + auth)
-    
+        resp.set_header("Location", UploadResource.finalize_url(nonce, auth))
+
 class FinalizeResource:
     def unpack_pubspec(self, path):
         """
@@ -159,7 +196,7 @@ class FinalizeResource:
         # Remove the archive, if specified
         if remove_archive:
             os.remove(path)
-        
+
     async def on_get(self, req, resp, nonce, auth):
         path = os.path.join(ConfigSingleton.upload_dir, nonce)
         if not (os.path.exists(path) and os.path.isfile(path)):
@@ -189,10 +226,10 @@ class FinalizeResource:
                 }
             })
             self.cleanup(unpacked_path, path, remove_archive=True)
-            return 
-        
+            return
+
         result = PackageManager.update_package(name, pubspec)
-        if not result: 
+        if not result:
             resp.status = falcon.HTTP_304
             resp.content_type = falcon.MEDIA_JSON
             resp.text = json.dumps({
@@ -202,19 +239,18 @@ class FinalizeResource:
                 }
             })
             self.cleanup(unpacked_path, path, remove_archive=True)
-            return 
+            return
 
         # Store the archive
-        versions_path = os.path.join(PackageManager.package_path(name), "versions")
+        versions_path = PackageManager.package_versions_path(name)
         if not (os.path.exists(versions_path) and os.path.isdir(versions_path)):
+            # Create the versions directory if needed
             os.mkdir(versions_path)
-        shutil.move(path,
-                    os.path.join(versions_path,
-                                 pubspec["version"] + ".tar.gz"))
+
+        shutil.move(path, os.path.join(versions_path, pubspec["version"] + ".tar.gz"))
 
         self.cleanup(unpacked_path)
-                            
-        # Inspect
+
         resp.status = falcon.HTTP_200
         resp.content_type = "application/vnd.pub.v2+json"
         resp.text = json.dumps({
@@ -236,6 +272,12 @@ class ArchiveResource:
         resp.status = falcon.HTTP_200
 
 class PackageResource:
+    @staticmethod
+    def archive_url(package, version):
+        return "%s/archive/%s/%s.tar.gz" % (ConfigSingleton.outside_url,
+                                           package,
+                                           version)
+
     async def on_get(self, req, resp, package):
         if not PackageManager.package_exists(package):
             resp.status = falcon.HTTP_404
@@ -244,12 +286,14 @@ class PackageResource:
         with open(os.path.join(PackageManager.package_path(package), "info.json"), "r") as f:
             data = json.loads(f.read())
 
-        data["latest"]["archive_url"] = ConfigSingleton.outside_url + "/archive/" + package + "/" + data["latest"]["version"]
+        data["latest"]["archive_url"] = PackageResource.archive_url(package,
+                                                                    data["latest"]["version"])
 
         for i in range(len(data["versions"])):
-            data["versions"][i]["archive_url"] = ConfigSingleton.outside_url + "/archive/" + package + "/" + data["versions"][i]["version"]
+            version = data["versions"][i]["version"]
+            data["versions"][i]["archive_url"] = PackageResource.archive_url(package,
+                                                                             version)
 
-        
         resp.status = falcon.HTTP_200
         resp.content_type = falcon.MEDIA_JSON
         resp.text = json.dumps(data)
