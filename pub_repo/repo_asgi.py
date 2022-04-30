@@ -47,6 +47,12 @@ class ConfigSingleton:
             print("WARNING: NOT CHECKING TOKENS! EVERYONE CAN PUBLISH UPDATES FOR "
                   "EVERY PACKAGE AND PUBLISH ANY PACKAGE! DO NOT USE IN PRODUCTION")
 
+        # Create directories if they don't exist
+        if not os.path.exists(ConfigSingleton.package_dir):
+            os.makedirs(ConfigSingleton.package_dir)
+        if not os.path.exists(ConfigSingleton.upload_dir):
+            os.makedirs(ConfigSingleton.upload_dir)
+
 class PackageManager:
     @staticmethod
     def package_path(name):
