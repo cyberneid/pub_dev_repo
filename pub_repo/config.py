@@ -12,6 +12,8 @@ class ConfigSingleton:
     upload_dir: str
     # The external URL that this service is exposed on
     outside_url: str
+    # The title to show in the web view. Defaults to "Pub Repository"
+    web_title: str
     # Whether to check authorization when publishing
     check_authorization: bool
     # Mapping authorization token to list of packages that it can publish on
@@ -33,9 +35,10 @@ class ConfigSingleton:
         ConfigSingleton.package_dir = data["package_dir"]
         ConfigSingleton.upload_dir = data["upload_dir"]
         ConfigSingleton.outside_url = data["outside_url"]
+        ConfigSingleton.web_title = data.get("web_title", "Pub Repository")
         ConfigSingleton.check_authorization = data["check_authorization"]
         ConfigSingleton.allowed_tokens = data["tokens"]
-
+        
         if not ConfigSingleton.check_authorization:
             print("WARNING: NOT CHECKING TOKENS! EVERYONE CAN PUBLISH UPDATES FOR "
                   "EVERY PACKAGE AND PUBLISH ANY PACKAGE! DO NOT USE IN PRODUCTION")

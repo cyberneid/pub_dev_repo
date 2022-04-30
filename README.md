@@ -27,6 +27,9 @@ outside_url: http://127.0.0.1:8000
 # UPLOAD ANY PACKAGE. Use with care.
 check_authorization: false
 
+# The title of the web view
+web_title: Some Repository
+
 # Authorization tokens that are allowed to publish. These tokens must be URL safe and not
 # contain slashes.
 tokens:

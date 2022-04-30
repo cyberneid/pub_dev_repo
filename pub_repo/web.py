@@ -13,10 +13,10 @@ from .package import PackageManager
 index_template = jinja2.Template(source="""
 <html>
   <head>
-    <title>Pub Repository</title>
+    <title>{{ title|e }}</title>
   </head>
   <body>
-    <h1>Pub Repository</h1>
+    <h1>{{ title|e }}</h1>
     <div style="display: flex; flex-direction: column;">
       {% for package in packages %}
       <div>
@@ -128,4 +128,5 @@ class WebResource:
         resp.status = falcon.HTTP_200
         resp.content_type = falcon.MEDIA_HTML
         resp.text = index_template.render(packages=packages,
-                                          timedeltas=timedeltas)
+                                          timedeltas=timedeltas,
+                                          title=ConfigSingleton.web_title)
