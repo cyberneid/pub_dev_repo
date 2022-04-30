@@ -127,8 +127,19 @@ class PublishResource:
                                                               nonce,
                                                               token)
 
+    @staticmethod
+    def get_token_from_authorized(header):
+        prep = header.strip()
+        if (prep.startswith("Bearer")):
+            return prep.split(" ")[-1].strip()
+        elif not ConfigSingleton.check_authorization:
+            return ""
+
+        raise Exception("Unknown Authorization header")
+
     async def on_get(self, req, resp):
-        token = req.headers.get("Authorization", "")
+        auth_header = req.headers.get("Authorization", "")
+        token = PublishResource.get_token_from_authorized(auth_header)
         if (ConfigSingleton.check_authorization
             and token not in ConfigSingleton.allowed_tokens):
             resp.content_type = "application/vnd.pub.v2+json"
