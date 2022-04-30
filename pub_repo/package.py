@@ -1,6 +1,7 @@
 import os
 import os.path
 import json
+import time
 
 from .config import ConfigSingleton
 
@@ -67,7 +68,9 @@ class PackageManager:
             "pubspec": pubspec_data
         }
         info["latest"] = version
-        info["versions"].append(version) 
+        info["versions"].append(version)
+        last_published = time.time()
+        info["last_published"] = last_published
         
         with open(PackageManager.package_info_path(name), "w") as f:
             f.write(json.dumps(info))
@@ -75,7 +78,7 @@ class PackageManager:
         return (
             info["name"],
             pubspec_data["version"],
-            "", # TODO
+            last_published,
             pubspec_data.get("description", ""),
             pubspec_data.get("homepage", "")
         )
