@@ -38,10 +38,12 @@ class PublishResource:
         try:
             token = PublishResource.get_token_from_authorized(auth_header)
         except Exception:
-            resp.content_type = "application/vnd.pub.v2+json"
-            resp.status = falcon.HTTP_403
-            resp.set_header("WWW-Authenticate", "Bearer realm=\"pub\", message=\"Unknown authentication header\"")
-            return
+            # Only treat this as unauthorized if we are checking authorization
+            if ConfigSingleton.check_authorization:
+                resp.content_type = "application/vnd.pub.v2+json"
+                resp.status = falcon.HTTP_403
+                resp.set_header("WWW-Authenticate", "Bearer realm=\"pub\", message=\"Unknown authentication header\"")
+                return
             
         if (ConfigSingleton.check_authorization
             and token not in ConfigSingleton.allowed_tokens):
