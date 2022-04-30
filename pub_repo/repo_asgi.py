@@ -129,8 +129,8 @@ class PublishResource:
 
     async def on_get(self, req, resp):
         token = req.headers.get("Authorization", "")
-        if not (token in ConfigSingleton.allowed_tokens
-                or not ConfigSingleton.check_authorization):
+        if (ConfigSingleton.check_authorization
+            and token not in ConfigSingleton.allowed_tokens):
             resp.content_type = "application/vnd.pub.v2+json"
             resp.status = falcon.HTTP_403
             resp.text = json.dumps({
