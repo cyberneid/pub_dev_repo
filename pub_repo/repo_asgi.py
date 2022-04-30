@@ -293,9 +293,9 @@ class ArchiveResource:
 class PackageResource:
     @staticmethod
     def archive_url(package, version):
-        return "%s/archive/%s/%s.tar.gz" % (ConfigSingleton.outside_url,
-                                           package,
-                                           version)
+        return "%s/archive/%s/%s" % (ConfigSingleton.outside_url,
+                                     package,
+                                     version)
 
     async def on_get(self, req, resp, package):
         if not PackageManager.package_exists(package):
