@@ -74,7 +74,7 @@ class PackageManager:
 
         return (
             info["name"],
-            version,
+            pubspec_data["version"],
             "", # TODO
             pubspec_data.get("description", ""),
             pubspec_data.get("homepage", "")

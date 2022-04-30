@@ -47,6 +47,9 @@ class WebResource:
 
     @staticmethod
     def load_package_metadata():
+        # Make sure that we don't have data here that is outdated
+        WebResource.data_cache = {}
+        
         base_path = PackageManager.package_path("")
         for item in os.listdir(base_path):
             package_path = os.path.join(base_path, item)
