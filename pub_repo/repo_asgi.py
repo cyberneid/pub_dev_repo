@@ -9,119 +9,9 @@ import yaml
 import falcon
 import falcon.asgi
 
-class ConfigSingleton:
-    """
-    Kind-of-singleton holding all the static service configuration.
-    """
-    # Where packages are stored
-    package_dir: str
-    # Where uploads are tempoarily are stored
-    upload_dir: str
-    # The external URL that this service is exposed on
-    outside_url: str
-    # Whether to check authorization when publishing
-    check_authorization: bool
-    # Mapping authorization token to list of packages that it can publish on
-    allowed_tokens: dict
-
-    @staticmethod
-    def load_config():
-        """
-        Load the configuration into the singleton class.
-        """
-        path = os.environ.get("PUB_REPO_CONFIG", "./pub_repo.yaml")
-
-        if not (os.path.exists(path) and os.path.isfile(path)):
-            raise Exception("Config file not found at " + path)
-
-        with open(path, "r") as f:
-            data = yaml.safe_load(f.read())
-
-        ConfigSingleton.package_dir = data["package_dir"]
-        ConfigSingleton.upload_dir = data["upload_dir"]
-        ConfigSingleton.outside_url = data["outside_url"]
-        ConfigSingleton.check_authorization = data["check_authorization"]
-        ConfigSingleton.allowed_tokens = data["tokens"]
-
-        if not ConfigSingleton.check_authorization:
-            print("WARNING: NOT CHECKING TOKENS! EVERYONE CAN PUBLISH UPDATES FOR "
-                  "EVERY PACKAGE AND PUBLISH ANY PACKAGE! DO NOT USE IN PRODUCTION")
-
-        # Create directories if they don't exist
-        if not os.path.exists(ConfigSingleton.package_dir):
-            os.makedirs(ConfigSingleton.package_dir)
-        if not os.path.exists(ConfigSingleton.upload_dir):
-            os.makedirs(ConfigSingleton.upload_dir)
-
-class PackageManager:
-    @staticmethod
-    def package_path(name):
-        """
-        Returns the path to the package with name @name. Does not imply its existence.
-        """
-        return os.path.join(ConfigSingleton.package_dir, name)
-
-    @staticmethod
-    def package_exists(name):
-        """
-        Return true if the package exists in the system. False otherwise.
-        """
-        path = PackageManager.package_path(name)
-        return os.path.exists(path) and os.path.isdir(path)
-
-    @staticmethod
-    def package_info_path(name):
-        """
-        Return the path to the packages info.json metadata file. Does not imply its
-        existence.
-        """
-        return os.path.join(PackageManager.package_path(name), "info.json")
-
-    @staticmethod
-    def package_versions_path(name):
-        """
-        Return the path to the packages versions directory. Does not imply its
-        existence.
-        """
-        return os.path.join(PackageManager.package_path(name), "versions")
-
-    @staticmethod
-    def update_package(name, pubspec_data):
-        """
-        Update the package's metadata. Returns True if everything went well.
-        False, if the version is already added.
-        """
-        info = {}
-        package_exists = PackageManager.package_exists(name)
-        if not package_exists:
-            info = {
-                "name": pubspec_data["name"],
-                "latest": {},
-                "versions": []
-            }
-        else:
-            with open(PackageManager.package_info_path(name), "r") as f:
-                info = json.loads(f.read())
-
-        versions = [ v["version"] for v in info["versions"] ]
-        if pubspec_data["version"] in versions:
-            return False
-
-        if not package_exists:
-            os.mkdir(PackageManager.package_path(name))
-            os.mkdir(PackageManager.package_versions_path(name))
-
-        version = {
-            "version": pubspec_data["version"],
-            "pubspec": pubspec_data
-        }
-        info["latest"] = version
-        info["versions"].append(version)
-
-        with open(PackageManager.package_info_path(name), "w") as f:
-            f.write(json.dumps(info))
-
-        return True
+from .config import ConfigSingleton
+from .package import PackageManager
+from .web import WebResource, PackageCacheEntry
 
 class PublishResource:
     # A list of nonces we are currently using
@@ -260,6 +150,15 @@ class FinalizeResource:
             self.cleanup(unpacked_path, path, remove_archive=True)
             return
 
+        # Notify the Web view of the new or changed package
+        WebResource.data_cache[result[0]] = PackageCacheEntry(
+            result[0],
+            result[1],
+            result[2],
+            result[3],
+            result[4]
+        )
+        
         # Store the archive
         versions_path = PackageManager.package_versions_path(name)
         if not (os.path.exists(versions_path) and os.path.isdir(versions_path)):
@@ -327,3 +226,4 @@ app.add_route("/api/packages/{package}", PackageResource())
 app.add_route("/api/packages/versions/new/upload/{nonce}/{auth}", UploadResource())
 app.add_route("/api/packages/versions/new/finalize/{nonce}/{auth}", FinalizeResource())
 app.add_route("/archive/{package}/{version}", ArchiveResource())
+app.add_route("/", WebResource())
