@@ -135,21 +135,23 @@ class PublishResource:
         elif not ConfigSingleton.check_authorization:
             return ""
 
-        raise Exception("Unknown Authorization header")
+        raise Exception("Unknown Authorization header: " + prep)
 
     async def on_get(self, req, resp):
-        auth_header = req.headers.get("Authorization", "")
-        token = PublishResource.get_token_from_authorized(auth_header)
+        auth_header = req.headers.get("authorization", "")
+        try:
+            token = PublishResource.get_token_from_authorized(auth_header)
+        except Exception:
+            resp.content_type = "application/vnd.pub.v2+json"
+            resp.status = falcon.HTTP_403
+            resp.set_header("WWW-Authenticate", "Bearer realm=\"pub\", message=\"Unknown authentication header\"")
+            return
+            
         if (ConfigSingleton.check_authorization
             and token not in ConfigSingleton.allowed_tokens):
             resp.content_type = "application/vnd.pub.v2+json"
             resp.status = falcon.HTTP_403
-            resp.text = json.dumps({
-                "error": {
-                    "code": 2,
-                    "message": "Invalid authorization token"
-                }
-            })
+            resp.set_header("WWW-Authenticate", "Bearer realm=\"pub\", message=\"Invalid authentication token\"")
             return
 
         nonce = token_urlsafe(64)
