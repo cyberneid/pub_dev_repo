@@ -20,7 +20,7 @@
     });
 
     nixosModule = { config, lib, pkgs, ... }: let
-      cfg = config.polynom.services.pub_repo;
+      cfg = config.papatutuwawa.services.pub_repo;
       pub_repo = self.packages.${pkgs.system}.pub_repo;
     in {
       options.papatutuwawa.services.pub_repo = {
