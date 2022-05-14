@@ -52,7 +52,7 @@
         };
       };
 
-      config = lib.mkIf cfg.enable lib.mkIf cfg.enable {
+      config = lib.mkIf cfg.enable {
         users.users.pubrepo = {
           name = "pubrepo";
           group = "pubrepo";
