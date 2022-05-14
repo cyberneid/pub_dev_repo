@@ -12,3 +12,6 @@ venv/
 uploads/
 packages/
 config.yaml
+
+# Nix
+result

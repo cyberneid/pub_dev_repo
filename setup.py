@@ -11,7 +11,7 @@ setup(
     install_requires = [
         "falcon==3.1.0",
         "pyyaml==6.0",
-        "jinja2==3.1.2"
+        "jinja2==3.1.1"
     ],
     zip_safe = True
 )
