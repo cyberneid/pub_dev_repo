@@ -23,7 +23,7 @@
       cfg = config.polynom.services.pub_repo;
       pub_repo = self.packages.${pkgs.system}.pub_repo;
     in {
-      options.polynom.services.pub_repo = {
+      options.papatutuwawa.services.pub_repo = {
         enable = lib.mkEnableOption "Enable pub_repo.";
 
         uid = lib.mkOption {
