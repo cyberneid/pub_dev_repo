@@ -20,7 +20,7 @@
     });
 
     nixosModule = { config, lib, pkgs, ... }: let
-      cfg = config.polynom.servics.pub_repo;
+      cfg = config.polynom.services.pub_repo;
       pub_repo = self.packages.${pkgs.system}.pub_repo;
     in {
       options.polynom.services.pub_repo = {
