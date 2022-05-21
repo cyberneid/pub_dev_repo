@@ -75,7 +75,7 @@
           restartTriggers = [ cfg.configFile ];
           environment = {
             # TODO: This is really weird. Why doesn't withPackages does this for us?
-            PYTHONPATH = "${pythonEnv}/${pkgs.python3.sitePackages}:${pubrepo}/${pkgs.python3.sitePackages}:${pkgs.python3.pkgs.pyyaml}/${pkgs.python3.sitePackages}:${pkgs.python3.pkgs.falcon}/${pkgs.python3.sitePackages}:${pkgs.python3.pkgs.jinja2}/${pkgs.python3.sitePackages}:${pkgs.python3.pkgs.markupsafe}/${pkgs.python3.sitePackages}";
+            PYTHONPATH = "${pythonEnv}/${pkgs.python3.sitePackages}:${pub_repo}/${pkgs.python3.sitePackages}:${pkgs.python3.pkgs.pyyaml}/${pkgs.python3.sitePackages}:${pkgs.python3.pkgs.falcon}/${pkgs.python3.sitePackages}:${pkgs.python3.pkgs.jinja2}/${pkgs.python3.sitePackages}:${pkgs.python3.pkgs.markupsafe}/${pkgs.python3.sitePackages}";
             PUB_REPO_CONFIG = cfg.configFile;
           };
           script = ''
