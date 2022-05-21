@@ -9,19 +9,17 @@
   }: let
     supportedSystems = [ "x86_64-linux" ];
     forAllSystems = nixpkgs.lib.attrsets.genAttrs supportedSystems;
-  in {
-    packages = forAllSystems (system: let
+    pubrepo = system: let
       pkgs = import nixpkgs { inherit system; };
-
-      pub_repo = pkgs.callPackage ./pkgs/pub_repo.nix {};
-    in {
-      inherit pub_repo;
-      default = pub_repo;
+    in pkgs.callPackage ./pkgs/pub_repo.nix {};
+  in {
+    packages = forAllSystems (system: {
+      pub_repo = pubrepo system;
+      default = pubrepo system;
     });
 
     nixosModule = { config, lib, pkgs, ... }: let
       cfg = config.papatutuwawa.services.pub_repo;
-      pub_repo = self.packages.${pkgs.system}.pub_repo;
     in {
       options.papatutuwawa.services.pub_repo = {
         enable = lib.mkEnableOption "Enable pub_repo.";
@@ -65,6 +63,7 @@
         };
         
         systemd.services.pubrepo = let
+          pub_repo = pubrepo pkgs.system;
           pythonEnv = pkgs.python3.withPackages (ps: with ps; [
             daphne pub_repo
           ]);
@@ -75,7 +74,8 @@
           wantedBy = [ "multi-user.target" ];
           restartTriggers = [ cfg.configFile ];
           environment = {
-            PYTHONPATH = "${pythonEnv}/${pkgs.python3.sitePackages}";
+            # TODO: This is really weird. Why doesn't withPackages does this for us?
+            PYTHONPATH = "${pythonEnv}/${pkgs.python3.sitePackages}:${pubrepo}/${pkgs.python3.sitePackages}:${pkgs.python3.pkgs.pyyaml}/${pkgs.python3.sitePackages}:${pkgs.python3.pkgs.falcon}/${pkgs.python3.sitePackages}:${pkgs.python3.pkgs.jinja2}/${pkgs.python3.sitePackages}:${pkgs.python3.pkgs.markupsafe}/${pkgs.python3.sitePackages}";
             PUB_REPO_CONFIG = cfg.configFile;
           };
           script = ''
