@@ -230,3 +230,4 @@ app.add_route("/api/packages/versions/new/upload/{nonce}/{auth}", UploadResource
 app.add_route("/api/packages/versions/new/finalize/{nonce}/{auth}", FinalizeResource())
 app.add_route("/archive/{package}/{version}", ArchiveResource())
 app.add_route("/", WebResourceRedirect())
+app.add_route("/packages", WebResource())
