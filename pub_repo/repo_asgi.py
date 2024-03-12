@@ -127,7 +127,7 @@ class FinalizeResource:
         name = pubspec["name"]
 
         if (ConfigSingleton.check_authorization
-            and not name in ConfigSingleton.allowed_tokens[auth] and not "*" in ConfigSingleton.allowed_tokens[auth]):
+            and not name in ConfigSingleton.allowed_tokens[auth] and not 'any' in ConfigSingleton.allowed_tokens[auth]):
             resp.status = falcon.HTTP_403
             resp.content_type = falcon.MEDIA_JSON
             resp.text = json.dumps({
