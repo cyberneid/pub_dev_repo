@@ -141,7 +141,7 @@ class FinalizeResource:
 
         result = PackageManager.update_package(name, pubspec)
         if not result:
-            resp.status = falcon.HTTP_304
+            resp.status = falcon.HTTP_403
             resp.content_type = falcon.MEDIA_JSON
             resp.text = json.dumps({
                 "error": {
