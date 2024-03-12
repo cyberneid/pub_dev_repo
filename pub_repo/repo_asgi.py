@@ -12,6 +12,7 @@ import falcon.asgi
 from .config import ConfigSingleton
 from .package import PackageManager
 from .web import WebResource, PackageCacheEntry
+from .web_redirect import WebResourceRedirect
 
 class PublishResource:
     # A list of nonces we are currently using
@@ -228,4 +229,4 @@ app.add_route("/api/packages/{package}", PackageResource())
 app.add_route("/api/packages/versions/new/upload/{nonce}/{auth}", UploadResource())
 app.add_route("/api/packages/versions/new/finalize/{nonce}/{auth}", FinalizeResource())
 app.add_route("/archive/{package}/{version}", ArchiveResource())
-app.add_route("/", WebResource())
+app.add_route("/", WebResourceRedirect())
