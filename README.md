@@ -6,6 +6,7 @@ A simple selfhostable pub repository with support for publishing.
 
 Install using `setup.py install` and run with any ASGI host, like for example
 `daphne`: `daphne -p 8000 pub_repo.repo_asgi:app`.
+sudo daphne -b 0.0.0.0 -p 8000 pub_repo.repo_asgi:app
 
 ## Configuration
 
