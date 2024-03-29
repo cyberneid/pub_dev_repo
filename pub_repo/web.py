@@ -40,7 +40,6 @@ class PackageCacheEntry:
     last_published: str
     description: str
     homepage: str
-    authors: str
 
 class WebResource:
     # package name -> PackageCacheEntry
