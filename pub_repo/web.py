@@ -97,7 +97,7 @@ class WebResource:
         timedeltas = {}
         now = datetime.now()
         packages = WebResource.data_cache.values()
-        print(packages)
+        #print(packages)
         #packages.sort(key="title")
         for package in packages:
             if package.last_published > -1:
