@@ -40,6 +40,7 @@ class PackageCacheEntry:
     last_published: str
     description: str
     homepage: str
+    authors: str
 
 class WebResource:
     # package name -> PackageCacheEntry
@@ -97,6 +98,7 @@ class WebResource:
         timedeltas = {}
         now = datetime.now()
         packages = WebResource.data_cache.values()
+        packages.sort(key="title")
         for package in packages:
             if package.last_published > -1:
                 delta = now - datetime.fromtimestamp(package.last_published)
